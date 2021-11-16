@@ -1,0 +1,47 @@
+install.packages(c("robumeta", "metafor", "dplyr"))
+library("robumeta")
+library("metafor")
+library("dplyr")
+library(readr)
+library(readr)
+
+
+library(readr)
+dat_Sheet1 <- read_csv("student/dat - Sheet1.csv")
+View(dat_Sheet1)
+
+#use the escalc function to create yi and vi variables which are the effect sizes. yi is 
+dat1 <- escalc(measure = "RR", ai = tpos, bi = tneg, ci = cpos, di = cneg, data = dat_Sheet1, append = TRUE)
+print(dat1[,-c(4:7)], row.names = FALSE)
+
+#fitting a random-effects model
+res <- rma(yi, vi, data = dat1)
+res
+confint(res)
+
+#predict pooled risk ratio
+predict(res, transf = exp,digits =2)
+
+
+#plot forest plot
+forest(res, slab = paste(dat1$author, dat1$year, sep = ", "), 
+       xlim = c(-16, 6), at = log(c(0.05, 0.25, 1, 4)), atransf = exp,
+       ilab = cbind(dat1$tpos, dat1$tneg, dat1$cpos, dat1$cneg),
+       ilab.xpos = c(-9.5, -8, -6, -4.5), cex = 0.75,annotate = TRUE)
+
+op <- par(cex = 0.75, font = 2)
+text(c(-9.5, -8, -6, -4.5),6, c("+ve", "-ve", "+ve", "-ve"))
+text(c(-9.5, -6), 7.2, c("Treatment", "Control"))
+text(-16, 6, "Author(s) and Year", pos = 4)
+text(6, 6, "Relative Risk [95% CI]", pos = 2)
+par(op)
+
+#plot funnel plot
+funnel(res, xlab = "Log Relative Risk") 
+#test asymmetry
+regtest(res)
+
+#check the influence of the studies
+inf <- influence(res)
+print(inf)
+plot(inf)
